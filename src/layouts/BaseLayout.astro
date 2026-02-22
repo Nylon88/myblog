@@ -1,7 +1,6 @@
 ---
 import "../styles/global.css";
 
-const { title, description } = Astro.props;
 const path = Astro.url.pathname;
 const base = import.meta.env.BASE_URL.endsWith("/")
   ? import.meta.env.BASE_URL
@@ -13,6 +12,27 @@ const withBase = (value = "") => {
 const normalizePath = (value) => (value.endsWith("/") ? value : `${value}/`);
 const homePath = withBase("");
 const currentPath = normalizePath(path);
+const siteBaseUrl = Astro.site ?? Astro.url;
+
+const {
+  title,
+  description,
+  ogImage = withBase("images/header-cat.jpg"),
+  ogType = "website",
+} = Astro.props;
+
+const pageTitle = title ? `${title} | Leo` : "Leo";
+const pageDescription = description ?? "Portfolio and technical notes by Leo";
+const canonicalUrl = new URL(path, siteBaseUrl).toString();
+const toAbsoluteUrl = (value) => {
+  if (!value) return undefined;
+  try {
+    return new URL(value).toString();
+  } catch {
+    return new URL(value, siteBaseUrl).toString();
+  }
+};
+const ogImageUrl = toAbsoluteUrl(ogImage);
 
 const nav = [
   { href: homePath, label: "Home" },
@@ -25,8 +45,21 @@ const nav = [
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{title ? `${title} | Leo` : "Leo"}</title>
-    {description && <meta name="description" content={description} />}
+    <title>{pageTitle}</title>
+    <meta name="description" content={pageDescription} />
+    <link rel="canonical" href={canonicalUrl} />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={pageDescription} />
+    <meta property="og:type" content={ogType} />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:site_name" content="Leo" />
+    <meta property="og:locale" content="ja_JP" />
+    {ogImageUrl && <meta property="og:image" content={ogImageUrl} />}
+    {ogImageUrl && <meta property="og:image:alt" content={`${pageTitle} thumbnail`} />}
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={pageTitle} />
+    <meta name="twitter:description" content={pageDescription} />
+    {ogImageUrl && <meta name="twitter:image" content={ogImageUrl} />}
     <link rel="icon" type="image/jpeg" href={withBase("images/header-cat.jpg")} />
     <link rel="shortcut icon" href={withBase("images/header-cat.jpg")} />
   </head>
