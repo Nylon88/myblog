@@ -7,6 +7,15 @@ type Props = CollectionEntry<"blog">["data"];
 
 const { title, description, pubDate, updatedDate, heroImage, tags = [] } = Astro.props as Props;
 const isPublicHeroImage = typeof heroImage === "string";
+const base = import.meta.env.BASE_URL.endsWith("/")
+  ? import.meta.env.BASE_URL
+  : `${import.meta.env.BASE_URL}/`;
+const withBase = (value = "") => {
+  const normalized = value.replace(/^\/+/, "");
+  return normalized ? `${base}${normalized}` : base;
+};
+const heroImageSrc =
+  isPublicHeroImage && heroImage.startsWith("/") ? withBase(heroImage) : heroImage;
 
 const formatDate = (date: Date) =>
   new Intl.DateTimeFormat("ja-JP", {
@@ -23,7 +32,7 @@ const formatDate = (date: Date) =>
         <figure class="card article-hero">
           {
             isPublicHeroImage ? (
-              <img src={heroImage} alt={title} loading="eager" decoding="async" />
+              <img src={heroImageSrc} alt={title} loading="eager" decoding="async" />
             ) : (
               <Image width={1200} height={630} src={heroImage} alt={title} />
             )

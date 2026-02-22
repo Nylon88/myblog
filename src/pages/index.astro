@@ -5,6 +5,13 @@ import { getCollection } from "astro:content";
 const posts = (await getCollection("blog", ({ data }) => !data.draft)).sort(
   (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
 );
+const base = import.meta.env.BASE_URL.endsWith("/")
+  ? import.meta.env.BASE_URL
+  : `${import.meta.env.BASE_URL}/`;
+const withBase = (value = "") => {
+  const normalized = value.replace(/^\/+/, "");
+  return normalized ? `${base}${normalized}` : base;
+};
 ---
 
 <BaseLayout title="Home" description="Portfolio and technical notes by Leo">
@@ -15,8 +22,8 @@ const posts = (await getCollection("blog", ({ data }) => !data.draft)).sort(
       趣味や技術的なことを、このページに気ままに綴ります。
     </p>
     <div class="hero-actions">
-      <a class="button primary" href="/blog">ブログポスト</a>
-      <a class="button ghost" href="/about">プロフィール</a>
+      <a class="button primary" href={withBase("blog/")}>ブログポスト</a>
+      <a class="button ghost" href={withBase("about/")}>プロフィール</a>
     </div>
   </section>
 
@@ -30,7 +37,7 @@ const posts = (await getCollection("blog", ({ data }) => !data.draft)).sort(
           <ul>
             {posts.map((post) => (
               <li>
-                <a class="post-link" href={`/blog/${post.id.replace(/\.md$/, "")}/`}>
+                <a class="post-link" href={withBase(`blog/${post.id.replace(/\.md$/, "")}/`)}>
                   <span>{post.data.title}</span>
                   <span class="post-arrow" aria-hidden="true">-&gt;</span>
                 </a>

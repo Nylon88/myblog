@@ -3,11 +3,21 @@ import "../styles/global.css";
 
 const { title, description } = Astro.props;
 const path = Astro.url.pathname;
+const base = import.meta.env.BASE_URL.endsWith("/")
+  ? import.meta.env.BASE_URL
+  : `${import.meta.env.BASE_URL}/`;
+const withBase = (value = "") => {
+  const normalized = value.replace(/^\/+/, "");
+  return normalized ? `${base}${normalized}` : base;
+};
+const normalizePath = (value) => (value.endsWith("/") ? value : `${value}/`);
+const homePath = withBase("");
+const currentPath = normalizePath(path);
 
 const nav = [
-  { href: "/", label: "Home" },
-  { href: "/about", label: "About" },
-  { href: "/blog", label: "Blog" },
+  { href: homePath, label: "Home" },
+  { href: withBase("about/"), label: "About" },
+  { href: withBase("blog/"), label: "Blog" },
 ];
 ---
 
@@ -17,17 +27,17 @@ const nav = [
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title ? `${title} | Leo` : "Leo"}</title>
     {description && <meta name="description" content={description} />}
-    <link rel="icon" type="image/jpeg" href="/images/header-cat.jpg" />
-    <link rel="shortcut icon" href="/images/header-cat.jpg" />
+    <link rel="icon" type="image/jpeg" href={withBase("images/header-cat.jpg")} />
+    <link rel="shortcut icon" href={withBase("images/header-cat.jpg")} />
   </head>
   <body>
     <header class="site">
       <div class="container">
         <div class="nav">
-          <a class="brand" href="/">
+          <a class="brand" href={homePath}>
             <img
               class="brand-avatar"
-              src="/images/header-cat.jpg"
+              src={withBase("images/header-cat.jpg")}
               alt="Home"
               width="40"
               height="40"
@@ -39,7 +49,12 @@ const nav = [
             {nav.map((item) => (
               <a
                 href={item.href}
-                aria-current={path === item.href || (item.href !== "/" && path.startsWith(item.href)) ? "page" : undefined}
+                aria-current={
+                  currentPath === item.href ||
+                  (item.href !== homePath && currentPath.startsWith(item.href))
+                    ? "page"
+                    : undefined
+                }
               >
                 {item.label}
               </a>

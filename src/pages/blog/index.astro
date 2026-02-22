@@ -5,6 +5,13 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
 const posts = (await getCollection("blog", ({ data }) => !data.draft)).sort(
   (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
 );
+const base = import.meta.env.BASE_URL.endsWith("/")
+  ? import.meta.env.BASE_URL
+  : `${import.meta.env.BASE_URL}/`;
+const withBase = (value = "") => {
+  const normalized = value.replace(/^\/+/, "");
+  return normalized ? `${base}${normalized}` : base;
+};
 
 const groupedTags = posts.reduce((map, post) => {
   for (const tag of post.data.tags) {
@@ -48,7 +55,7 @@ const formatDate = (date: Date) =>
                   data-post-item
                   data-tags={post.data.tags.map((tag) => tag.toLowerCase()).join(",")}
                 >
-                  <a class="post-link" href={`/blog/${post.id.replace(/\.md$/, "")}/`}>
+                  <a class="post-link" href={withBase(`blog/${post.id.replace(/\.md$/, "")}/`)}>
                     <span>{post.data.title}</span>
                     <span class="post-arrow" aria-hidden="true">-&gt;</span>
                   </a>

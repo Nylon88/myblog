@@ -1,12 +1,19 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
+const base = import.meta.env.BASE_URL.endsWith("/")
+  ? import.meta.env.BASE_URL
+  : `${import.meta.env.BASE_URL}/`;
+const withBase = (value = "") => {
+  const normalized = value.replace(/^\/+/, "");
+  return normalized ? `${base}${normalized}` : base;
+};
 ---
 
 <BaseLayout title="About" description="Profile of Leo (a.k.a Nyleon)">
   <section class="about-simple">
     <div class="about-simple-photo">
       <img
-        src="/images/header-cat.jpg"
+        src={withBase("images/header-cat.jpg")}
         alt="Profile photo"
         width="220"
         height="220"
