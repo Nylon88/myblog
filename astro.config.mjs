@@ -6,6 +6,6 @@ import { defineConfig } from 'astro/config';
 
 // https://astro.build/config
 export default defineConfig({
-	site: 'nyleon.github.io',
+	site: 'https://nyleon.github.io',
 	integrations: [mdx(), sitemap()],
 });
