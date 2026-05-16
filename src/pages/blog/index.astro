@@ -1,0 +1,211 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+
+interface RSSItem {
+  title: string;
+  link: string;
+  pubDate: string;
+  imageUrl: string;
+}
+
+function extractTag(block: string, tag: string): string {
+  const cdata = new RegExp(`<${tag}[^>]*><!\\[CDATA\\[([\\s\\S]*?)\\]\\]><\\/${tag}>`).exec(block);
+  if (cdata) return cdata[1].trim();
+  const plain = new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`).exec(block);
+  return plain ? plain[1].trim() : "";
+}
+
+function parseRSS(xml: string): RSSItem[] {
+  const items: RSSItem[] = [];
+  const itemRegex = /<item>([\s\S]*?)<\/item>/g;
+  let m: RegExpExecArray | null;
+  while ((m = itemRegex.exec(xml)) !== null) {
+    const block = m[1];
+    const title = extractTag(block, "title");
+    const link = extractTag(block, "link");
+    const pubDate = extractTag(block, "pubDate");
+    const hatenaImg = /<hatena:imageurl>([\s\S]*?)<\/hatena:imageurl>/.exec(block);
+    const mediaImg = /<media:thumbnail\s+url="([^"]+)"/.exec(block);
+    const imageUrl = hatenaImg?.[1]?.trim() ?? mediaImg?.[1]?.trim() ?? "";
+    if (title && link) items.push({ title, link, pubDate, imageUrl });
+  }
+  return items;
+}
+
+function formatDate(dateStr: string): string {
+  try {
+    return new Intl.DateTimeFormat("ja-JP", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(new Date(dateStr));
+  } catch {
+    return dateStr;
+  }
+}
+
+let posts: RSSItem[] = [];
+let fetchError = false;
+try {
+  const res = await fetch("https://nyleon.hatenablog.com/rss");
+  if (res.ok) {
+    posts = parseRSS(await res.text());
+  } else {
+    fetchError = true;
+  }
+} catch {
+  fetchError = true;
+}
+---
+
+<BaseLayout title="Blog" description="Security and technical notes by Leo — はてなブログ">
+  <div class="blog-header">
+    <h1>Blog</h1>
+    <p class="meta">
+      はてなブログで趣味や技術について投稿しています。
+      <a href="https://nyleon.hatenablog.com/" target="_blank" rel="noopener noreferrer">
+        nyleon.hatenablog.com
+      </a>
+    </p>
+  </div>
+
+  {fetchError && (
+    <div class="card fetch-error">
+      <p class="meta">記事の取得に失敗しました。<a href="https://nyleon.hatenablog.com/" target="_blank" rel="noopener noreferrer">はてなブログ</a>を直接ご覧ください。</p>
+    </div>
+  )}
+
+  {!fetchError && posts.length === 0 && (
+    <div class="card fetch-error">
+      <p class="meta">まだ記事がありません。</p>
+    </div>
+  )}
+
+  {posts.length > 0 && (
+    <ul class="rss-list">
+      {posts.map((post) => (
+        <li class="card rss-item">
+          <a
+            class="rss-link"
+            href={post.link}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {post.imageUrl && (
+              <div class="rss-thumb">
+                <img src={post.imageUrl} alt="" loading="lazy" decoding="async" />
+              </div>
+            )}
+            <div class="rss-body">
+              <span class="rss-title">{post.title}</span>
+              {post.pubDate && (
+                <span class="meta rss-date">{formatDate(post.pubDate)}</span>
+              )}
+            </div>
+            <span class="post-arrow" aria-hidden="true">-&gt;</span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  )}
+</BaseLayout>
+
+<style>
+  .blog-header {
+    margin-bottom: 1.2rem;
+  }
+
+  .blog-header h1 {
+    margin-bottom: 0.3rem;
+  }
+
+  .fetch-error {
+    padding: 1.2rem 1.4rem;
+  }
+
+  .rss-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .rss-item {
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .rss-link {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.95rem 1.1rem;
+    text-decoration: none;
+    color: var(--ink);
+    transition: background 160ms ease;
+    border-radius: var(--radius);
+  }
+
+  .rss-link:hover {
+    background: rgba(var(--accent), 0.06);
+    color: var(--ink);
+  }
+
+  .rss-link:hover .rss-title {
+    color: var(--accent-color);
+  }
+
+  .rss-thumb {
+    flex-shrink: 0;
+    width: 72px;
+    height: 52px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    background: var(--bg-soft);
+  }
+
+  .rss-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .rss-body {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+
+  .rss-title {
+    font-weight: 700;
+    font-size: 0.97rem;
+    line-height: 1.45;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .rss-date {
+    margin: 0;
+    font-size: 0.83rem;
+  }
+
+  .post-arrow {
+    font-family: var(--font-mono);
+    font-size: 0.86rem;
+    color: var(--ink-soft);
+    flex-shrink: 0;
+  }
+
+  @media (max-width: 480px) {
+    .rss-thumb {
+      display: none;
+    }
+  }
+</style>
